@@ -1,0 +1,46 @@
+version: '3'
+services:
+  fluentd:
+    build: ./fluentd
+    container_name: loggingFluent
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+      # - ./fluentd/conf/fluent.conf:/fluentd/etc/fluent.conf
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    links:
+      - elasticsearch
+    depends_on:
+      - elasticsearch
+      - kibana  
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.1
+    volumes:
+      - ./elasticsearch_data/:/usr/share/elasticsearch/data
+    container_name: elasticsearch-Logging
+    ports:
+      - 9200:9200
+    expose:
+      - 9200  
+    environment:
+      discovery.type: 'single-node'
+      ES_JAVA_OPTS: '-Xms1024m -Xmx1024m'
+      xpack.security.enabled: 'true'
+      ELASTIC_PASSWORD: 'pass'
+      ELASTIC_USERNAME: 'elastic'
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.8.1
+    container_name: kibana-Logging
+    volumes:
+      - ./kibana.yml:/usr/share/kibana/config/kibana.yml
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200  
+    links:
+      - elasticsearch  
+       
